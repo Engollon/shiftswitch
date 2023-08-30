@@ -1,4 +1,4 @@
-# ShiftSwitch (Version 0.9.0)
+# ShiftSwitch (Version 0.1.2)
 
 ShiftSwitch est un site web dédié à la gestion des horaires de la piscine d'Engollon. Il permet au personel de voire leur horaire et de demander des replacements. 
 Le responalabe peut modifer les horaires et facillement créer les horaires our la saison.
