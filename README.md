@@ -1,8 +1,8 @@
-# Svelte + Vite
+# ShiftSwitch
 
-This template should help get you started developing with Svelte in Vite.
+ShiftSwitch est une application pour la gestion des horaires a la piscine d'Engollon:
 
-## Recommended IDE Setup
+## Utilisation
 
 [VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
 
