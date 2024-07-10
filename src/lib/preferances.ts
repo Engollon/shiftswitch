@@ -2,6 +2,7 @@ import { writable } from "svelte/store";
 import { onMount } from "svelte";
 import {pb,currentUser} from './pocketbase'
 export const useGrid= writable(false)
+export const poolfilter=writable(false)
 export const hideOthers= writable(false)
 export const about= writable(false)
 export const NN= writable(true)
@@ -10,7 +11,7 @@ export const renderDate = writable(new Date());
 export const imageUrl = writable(null);
 export const swapMsg=writable("Voulez-vous vraiment changer le statut de remplacement de cet horaire?");
 export const takeMsg=writable("Voulez-vous vraiment remplacer/prendre cet horaire?");
-export const version=writable("v0.6.3");
+export const version=writable("v0.6.4");
 //employee=@request.auth.id || @request.auth.isAdmin=true add back before relase.
 export const shifts=writable([]);
 export const swaps=writable([]);// should not be needed

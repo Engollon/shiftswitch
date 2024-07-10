@@ -4,7 +4,7 @@
     import Scroll from './Scroll.svelte';
     import Grid from './Grid.svelte';
     import Settings from './Settings.svelte';
-    import {useGrid,hideOthers,renderDate,settings,shifts} from './preferances'
+    import {useGrid,hideOthers,renderDate,settings,shifts, poolfilter} from './preferances'
     onMount(async () =>{
         $shifts=await pb.collection('shifts').getFullList({
             sort:'dateStart',
@@ -39,13 +39,15 @@
        shiftsByDate = {};
         for (const shift of Object.values($shifts)) {
           if (($hideOthers && shift.expand?.employee?.username == $currentUser.username) || !$hideOthers) {
+            if(($poolfilter && shift.location=="Engollon")||!$poolfilter){
               //console.log(shift.expand?.employee?.username,shift.dateStart,"/",new Date($renderDate.getFullYear(), $renderDate.getMonth() + 1, 1))
-            if (startDate <= new Date(shift.dateStart) && new Date(shift.dateStart) <= new Date($renderDate.getFullYear(), $renderDate.getMonth() + 1, 1)){
-              const day = new Date(shift.dateStart).toISOString().split('T')[0];
-              if (!shiftsByDate.hasOwnProperty(day)){
-                shiftsByDate[day] = [shift];
-              } else {
-                shiftsByDate[day].push(shift);
+              if (startDate <= new Date(shift.dateStart) && new Date(shift.dateStart) <= new Date($renderDate.getFullYear(), $renderDate.getMonth() + 1, 1)){
+                const day = new Date(shift.dateStart).toISOString().split('T')[0];
+                if (!shiftsByDate.hasOwnProperty(day)){
+                  shiftsByDate[day] = [shift];
+                } else {
+                  shiftsByDate[day].push(shift);
+                }
               }
             }
           }

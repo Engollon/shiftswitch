@@ -1,6 +1,6 @@
 <script>
     import {currentUser,pb} from './pocketbase';
-    import {hideOthers,renderDate,shifts,swapMsg,takeMsg,BackC} from './preferances'
+    import {hideOthers,poolfilter,renderDate,shifts,swapMsg,takeMsg,BackC} from './preferances'
     export let shiftsByDate;
     async function selected(selectedItemId){
       // when a shift is selected,
@@ -150,6 +150,7 @@
   .today{
     color: #D95706;
   }
+  
   .shift{
     background-color: white;
     border-radius: 3px;

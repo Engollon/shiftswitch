@@ -1,5 +1,5 @@
 <script>
-    import {useGrid,hideOthers,settings,imageUrl,about} from './preferances'
+    import {useGrid,hideOthers,settings,imageUrl,about,poolfilter} from './preferances'
     import {currentUser,pb} from './pocketbase'
     import {onMount} from 'svelte'
       function toggleLayout(){
@@ -10,6 +10,9 @@
       }
       function toggleOthers(){
           hideOthers.set(!$hideOthers);
+      }
+      function togglepool(){
+        poolfilter.set(!$poolfilter);
       }
       function toggleSettings(){
          settings.set(!$settings);
@@ -35,6 +38,7 @@
     <button title="Aide" on:click={toggleabout} class="toggle-button"><img src="help_2.png"></button>
     <button title={$useGrid?"Scroll":"Calendrier"} on:click={toggleLayout} class="toggle-button grid"><img src={$useGrid?'scroll.png':'grid.png'}/></button>
     <button title={$hideOthers?"Tout les horaires":"Seulement mes horaires"} on:click={toggleOthers} class="toggle-button"><img src={$hideOthers?'single_user.png':'multi_user.png'}/></button>
+    <button title={$poolfilter?"Seulement Engollon":"Tout les Piscines"} on:click={togglepool} class="toggle-button"><img src={$poolfilter?'swap_active.png':'swap_inactive.png'}/></button>
     <button title="Réglages" on:click={toggleSettings} class="toggle-button"><img src={$imageUrl? $imageUrl:"nopic.png"} class="profilepic"></button>
     <button title="Déconnexion" on:click={logout} class="toggle-button"><img src="logout.png"></button>
   </div>

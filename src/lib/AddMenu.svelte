@@ -21,6 +21,7 @@ function handleFileChange(event) {
         const text = e.target.result;
         csvData = processCSV(text);
         console.log(csvData)
+        console.log(typehorarie,"TP")
         if(typehorarie){ //if engollon horaire
             parseCSV(csvData) 
         }else{
@@ -123,7 +124,7 @@ function parseCSV(csvData) {
                 newshifts.push([gb4,new Date(year,month,day,11),new Date(year,month,day,20,30),"GB3"])
                     break;
                 default:
-                console.log(date[1])
+                //console.log(date[1])
                     
         }
         if(resp!=""){
@@ -137,18 +138,23 @@ function parseCSV(csvData) {
 function parseCSVOther(csvData){
     newshifts=[]
     for(let date of csvData.slice(1)){
-        let day=new Date(date[0]).getDate()
-        let month=new Date(date[0]).getMonth()
-        let year=new Date(date[0]).getFullYear()
-        let gb=removeAccents(String(date[1]))
-        let pool=String(date[2])
-        const [hoursS, minutesS] = String(date[3]).split('h');
-        const [hoursF, minutesF] = String(date[4]).split('h');
-        newshifts.push([gb,new Date(year,month,day,Number(hoursS),Number(minutesS)),new Date(year,month,day,Number(hoursF),Number(minutesF)),"Autre",pool])
+        let day=date[1].split('/')[0]
+        let month=date[1].split('/')[1]
+        let year=date[1].split('/')[2]
+        let gb=removeAccents(String(date[3]))
+        if(gb=="Romane"){gb="AnthonyRomane"}
+        else if (gb=="François"){gb="Francois"}
+        let pool=String(date[9])
+        if (pool=="GsC\r"){pool="GSC"}
+        else if(pool=="La Fontenelle\r"){pool="Fontnelle"}
+        const [hoursS, minutesS] = String(date[2].split('-')[0]).split('h');
+        const [hoursF, minutesF] = String(date[2].split('-')[1]).split('h');
+        console.log(year,month,day,Number(hoursS),Number(minutesS))
+        newshifts.push([gb,new Date(year,month,day,Number(hoursS),Number(minutesS)),new Date(year,month,day,Number(hoursF),Number(minutesF)),"GB1",pool])
                 
     }
     newshifts.pop() 
-    console.log(newshifts)
+    console.log(newshifts,"new shifts")
 }
 async function addshifts(){
     let employees = await pb.collection('users').getFullList({sort: '-created',});
@@ -162,9 +168,9 @@ async function addshifts(){
             "location": typehorarie?"Engollon":shift[4],
             "type":shift[3]
         };
+        console.log(data,"DATA")
         try{
             await pb.collection('shifts').create(data);
-            console.log(data)
         }catch(e){
             alert("Erreur")
         }
@@ -177,9 +183,10 @@ async function addfromCSV(){
     //add check and only change different ones
     //todo:
     
-    newshifts = newshifts.filter(element => {
-        return !$shifts.some(obj => obj.expand.employee.username === element[0]&& (new Date(obj.dateStart).getTime()==element[1].getTime()) && (new Date(obj.dateEnd).getTime()==element[2].getTime()) && obj.location == "Engollon");//)
+    /*newshifts = newshifts.filter(element => {
+    return !$shifts.some(obj => obj.expand.employee.username === element[0]&& (new Date(obj.dateStart).getTime()==element[1].getTime()) && (new Date(obj.dateEnd).getTime()==element[2].getTime()) && obj.location == "Engollon");//)
     });
+    */
     console.log(newshifts)
     console.log($shifts)
     
@@ -200,7 +207,13 @@ async function addfromCSV(){
   </div>
   <div class="action">
     {#each newshifts as shift }
-        <div>{shift[0]} - {shift[1].toISOString()} - {shift[2].toISOString()}- {shift[3]}</div>
+        <div class="shift">
+            <div>{shift[0]}</div> -
+            <div>{shift[1].toISOString()}</div> - 
+            <div>{shift[2].toISOString()}</div> - 
+            <div>{shift[3]}</div> - 
+            <div>{shift[4]}</div>
+        </div>
     {/each}
     {#if newshifts.length!=0}
         	<button class="button" on:click={addfromCSV}>{num>0?btext:"Ajouter ces horaires"}</button>
@@ -211,6 +224,15 @@ async function addfromCSV(){
 </div>
 
 <style>
+    .shift{
+        background-color:rgb(40, 40, 40);
+        border-radius: 8px;
+        padding: 8px;
+        margin: 5px;
+        display: flex;
+        justify-content: space-around;
+    
+    }
     .section{
       background-color:#444444;
       border-radius: 8px;
