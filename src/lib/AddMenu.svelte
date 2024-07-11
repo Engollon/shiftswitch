@@ -20,8 +20,8 @@ function handleFileChange(event) {
       reader.onload = function(e) {
         const text = e.target.result;
         csvData = processCSV(text);
-        console.log(csvData)
-        console.log(typehorarie,"TP")
+       // console.log(csvData)
+       // console.log(typehorarie,"TP")
         if(typehorarie){ //if engollon horaire
             parseCSV(csvData) 
         }else{
@@ -149,16 +149,16 @@ function parseCSVOther(csvData){
         else if(pool=="La Fontenelle\r"){pool="Fontnelle"}
         const [hoursS, minutesS] = String(date[2].split('-')[0]).split('h');
         const [hoursF, minutesF] = String(date[2].split('-')[1]).split('h');
-        console.log(year,month,day,Number(hoursS),Number(minutesS))
-        newshifts.push([gb,new Date(year,month,day,Number(hoursS),Number(minutesS)),new Date(year,month,day,Number(hoursF),Number(minutesF)),"GB1",pool])
+       // console.log(year,month,day,Number(hoursS),Number(minutesS))
+        newshifts.push([gb,new Date(year,month-1,day,Number(hoursS),Number(minutesS)),new Date(year,month-1,day,Number(hoursF),Number(minutesF)),"GB1",pool])
                 
     }
     newshifts.pop() 
-    console.log(newshifts,"new shifts")
+    //console.log(newshifts,"new shifts")
 }
 async function addshifts(){
     let employees = await pb.collection('users').getFullList({sort: '-created',});
-    console.log(employees)
+    //console.log(employees)
     for(let shift of newshifts){
         const data = {
             "dateStart":shift[1],
@@ -168,7 +168,7 @@ async function addshifts(){
             "location": typehorarie?"Engollon":shift[4],
             "type":shift[3]
         };
-        console.log(data,"DATA")
+        //console.log(data,"DATA")
         try{
             await pb.collection('shifts').create(data);
         }catch(e){
@@ -216,14 +216,22 @@ async function addfromCSV(){
         </div>
     {/each}
     {#if newshifts.length!=0}
+        <div class="buttongroup">
         	<button class="button" on:click={addfromCSV}>{num>0?btext:"Ajouter ces horaires"}</button>
-          <button class="button" on:click={()=>newshifts=[]}>Annuler</button>
+            <button class="button" on:click={()=>newshifts=[]}>Annuler</button>
+        </div>
     {/if}
     
 </div>
 </div>
 
 <style>
+    .buttongroup{
+        display: flex;
+        justify-content: space-around;
+        padding: 5px;
+        gap:5px;
+    }
     .shift{
         background-color:rgb(40, 40, 40);
         border-radius: 8px;
