@@ -1,5 +1,5 @@
 <script>
-    import {currentUser,pb} from './pocketbase';
+    import {currentUser,pb,isAdmin} from './pocketbase';
     import {hideOthers,poolfilter,renderDate,shifts,swapMsg,takeMsg,BackC} from './preferances'
     export let shiftsByDate;
     async function selected(selectedItemId){
@@ -7,9 +7,21 @@
         if(confirm($currentUser.id == selectedItemId.expand?.employee?.id?$swapMsg + "\n" +new Date(selectedItemId.dateStart).toLocaleDateString('default') +" - "+selectedItemId.location:$takeMsg+ "\n" +new Date(selectedItemId.dateStart).toLocaleDateString('default')+" - "+selectedItemId.location )){
           if($currentUser.id == selectedItemId.expand?.employee?.id){
             selectedItemId.swap=!selectedItemId.swap;
+            if(selectedItemId.swap){
+                // add 1 to swap ask for the GB who ask for a swap
+                const record2 =await pb.collection('users').getOne(selectedItemId.expand?.employee?.id,{"fields":"swapAsk"});
+                await pb.collection('users').update(selectedItemId.expand?.employee?.id, {"swapAsk":record2.swapAsk+1});
+            }else{
+                // remove 1 to swap ask for the GB who ask for a swap no more
+                const record2 =await pb.collection('users').getOne(selectedItemId.expand?.employee?.id,{"fields":"swapAsk"});
+                await pb.collection('users').update(selectedItemId.expand?.employee?.id, {"swapAsk":record2.swapAsk-1});
+            }
           }else{
-              selectedItemId.swap=!selectedItemId.swap;
-              selectedItemId.expand.employee=$currentUser;
+            // add one to swapTake for the orginal GB and add one to swapTake for the remplacant(currentuser)
+            const record = await pb.collection('users').getOne($currentUser.id,{"fields":"swapTake"});
+            await pb.collection('users').update($currentUser.id, {"swapTake":record.swapTake+1});
+            selectedItemId.swap=!selectedItemId.swap;
+            selectedItemId.expand.employee=$currentUser;
           }
           const data = {
             "employee" : $currentUser.id,
@@ -17,6 +29,26 @@
           };
           await pb.collection('shifts').update(selectedItemId.id,data);
         }
+    }
+   async function cancel(selectedItemId){
+      //change the canceled status
+        if(confirm("Voulez-vous vraiment changer le status de cet horaire?")){
+          //set status to opposite
+          selectedItemId.canceled=!selectedItemId.canceled
+          const record = await pb.collection('users').getOne(selectedItemId.expand?.employee?.id,{"fields":"numcanceled"});
+    
+          if(selectedItemId.canceled){
+            //add one to the personell cancel list.
+            await pb.collection('users').update(selectedItemId.expand?.employee?.id, {"numcanceled": record.numcanceled+1});
+          }else{
+            //remove one to the personell cancel list.
+            await pb.collection('users').update(selectedItemId.expand?.employee?.id,{"numcanceled": record.numcanceled-1});
+          }
+        }
+        const data = {
+            "canceled" : selectedItemId.canceled
+          };
+          await pb.collection('shifts').update(selectedItemId.id,data);
     }
     function fCap(str) {
         if(str){
@@ -51,59 +83,78 @@
               {#if !shift.swap}
                 <!-- the shift is yours-->
                 {#if shift.expand?.employee.id==$currentUser.id}
-                  <div class="shift" on:click={()=>selected(shift)}>
-                    <div><div class="name">{fCap(shift.expand?.employee?.username)}</div>
-                    <div class="time">
-                      ({new Date(shift.dateStart).getHours()}h{new Date(shift.dateStart).getMinutes() === 0 ?"00":new Date(shift.dateStart).getMinutes()} -{new Date(shift.dateEnd).getHours()}h{new Date(shift.dateEnd).getMinutes() === 0 ?"00":new Date(shift.dateEnd).getMinutes()})
+                  <div class="{shift.canceled?'shift red':'shift'}">
+                    <div class="datasec" on:click={()=>selected(shift)}>
+                      <div class="name">{fCap(shift.expand?.employee?.username)}</div>
+                      <div class="time">
+                        ({new Date(shift.dateStart).getHours()}h{new Date(shift.dateStart).getMinutes() === 0 ?"00":new Date(shift.dateStart).getMinutes()} -{new Date(shift.dateEnd).getHours()}h{new Date(shift.dateEnd).getMinutes() === 0 ?"00":new Date(shift.dateEnd).getMinutes()})
+                      </div>
+                      <div class="loc">{shift.location}</div>
+                      <div class="loc">{shift.type}</div>
                     </div>
+                    <div>
+                    {#if $isAdmin}
+                        <div on:click={()=>cancel(shift)}>{shift.canceled?'✔️':'❌'}</div>
+                      {/if}
                     </div>
-                    <div class="loc">{shift.location}</div>
-                    <div class="loc">{shift.type}</div>
                   </div>
                   <!-- the shift is not yours -->
                   {:else}
-                  <div class="noswap">
-                    <div>
-                    <div class="name">{fCap(shift.expand?.employee?.username)}</div>
-                    <div class="time">
-                      ({new Date(shift.dateStart).getHours()}h{new Date(shift.dateStart).getMinutes() === 0 ?"00":new Date(shift.dateStart).getMinutes()} - {new Date(shift.dateEnd).getHours()}h{new Date(shift.dateEnd).getMinutes() === 0 ?"00":new Date(shift.dateEnd).getMinutes()})
+                  <div class="{shift.canceled?'noswap red':'noswap'}">
+                    <div class="datasec">
+                      <div class="name">{fCap(shift.expand?.employee?.username)}</div>
+                      <div class="time">
+                        ({new Date(shift.dateStart).getHours()}h{new Date(shift.dateStart).getMinutes() === 0 ?"00":new Date(shift.dateStart).getMinutes()} - {new Date(shift.dateEnd).getHours()}h{new Date(shift.dateEnd).getMinutes() === 0 ?"00":new Date(shift.dateEnd).getMinutes()})
+                      </div>
+                      <div class="loc">{shift.location}</div>
+                      <div class="loc">{shift.type}</div>
                     </div>
+                    <div > 
+                      {#if $isAdmin}
+                      <div on:click={()=>cancel(shift)}>{shift.canceled?'✔️':'❌'}</div>
+                    {/if}
                     </div>
-                    <div class="loc">{shift.location}</div>
-                    <div class="loc">{shift.type}</div>
                   </div>
                   {/if}
                 <!-- the shift is a swap -->
                 {:else}
                   <!-- the shift is a valid swap or is yours -->
                   {#if swapcheck(shift) || shift.expand?.employee.id==$currentUser.id}
-                  <div class="swap" on:click={()=>selected(shift)}>
-                    <div>
-                    <div class="name">{fCap(shift.expand?.employee?.username)}</div>
-                    <div class="time">
-                      ({new Date(shift.dateStart).getHours()}h{new Date(shift.dateStart).getMinutes() === 0 ?"00":new Date(shift.dateStart).getMinutes()} - {new Date(shift.dateEnd).getHours()}h{new Date(shift.dateEnd).getMinutes() === 0 ?"00":new Date(shift.dateEnd).getMinutes()})
-                    </div>
-                    </div>
-                    <div class="loc">{shift.location}</div>
-                    <div class="loc">{shift.type}</div>
-                  </div>
-                  <!-- the shift is invalid swap -->
-                  {:else}
-                    <div class="noswap">
-                      <div>
+                  <div class="{shift.canceled?'swap red':'swap'}">
+                    <div class="datasec" on:click={()=>selected(shift)}>
                       <div class="name">{fCap(shift.expand?.employee?.username)}</div>
                       <div class="time">
                         ({new Date(shift.dateStart).getHours()}h{new Date(shift.dateStart).getMinutes() === 0 ?"00":new Date(shift.dateStart).getMinutes()} - {new Date(shift.dateEnd).getHours()}h{new Date(shift.dateEnd).getMinutes() === 0 ?"00":new Date(shift.dateEnd).getMinutes()})
                       </div>
-                      </div>
+                    <div class="loc">{shift.location}</div>
+                    <div class="loc">{shift.type}</div>
+                    </div>
+                    <div>
+                    {#if $isAdmin}
+                        <div on:click={()=>cancel(shift)}>{shift.canceled?'✔️':'❌'}</div>
+                      {/if}
+                    </div>
+                  </div>
+                  <!-- the shift is invalid swap -->
+                  {:else}
+                    <div class="{shift.canceled?'noswap red':'noswap'}">
+                      <div>
+                        <div class="name">{fCap(shift.expand?.employee?.username)}</div>
+                        <div class="time">
+                          ({new Date(shift.dateStart).getHours()}h{new Date(shift.dateStart).getMinutes() === 0 ?"00":new Date(shift.dateStart).getMinutes()} - {new Date(shift.dateEnd).getHours()}h{new Date(shift.dateEnd).getMinutes() === 0 ?"00":new Date(shift.dateEnd).getMinutes()})
+                        </div>
                       <div class="loc">{shift.location}</div>
                       <div class="loc">{shift.type}</div>
+                    </div>
+                      {#if $isAdmin}
+                        <div on:click={()=>cancel(shift)}>{shift.canceled?'✔️':'❌'}</div>
+                      {/if}
                     </div>
                   {/if}
                 {/if}
                 <!-- the shift is already past -->
                 {:else}
-                  <div class="shift past">
+                  <div class="{shift.canceled?'shift past lightred':'shift past'}">
                     <div>
                     <div class="name">{fCap(shift.expand?.employee?.username)}</div>
                     <div class="time">
@@ -135,7 +186,7 @@
     display: flex;
     flex-grow: 1;
     align-content: flex-start;
-    font-family: 'Roboto';
+    font-family: 'Roboto','Helvetica';
     flex-wrap: wrap;
   }
   .date{
@@ -152,6 +203,8 @@
   }
   
   .shift{
+    display: flex;
+    justify-content: space-between;
     background-color: white;
     border-radius: 3px;
     color: black;
@@ -162,6 +215,8 @@
     cursor: pointer;
   }
   .noswap{
+    display: flex;
+    justify-content: space-between;
     background-color: transparent;
     color: white;
     border: 1px solid white;
@@ -184,6 +239,7 @@
     cursor: pointer;
   }
   .past{
+    display:inline;
     background-color: rgb(40, 40, 40);
     color: #444444;
   }
@@ -195,6 +251,17 @@
   }
   .loc{
     font-size: small;
+  }
+  .datasec{
+    flex-grow: 1;
+  }
+  .red{
+    background-color: red;
+    border-color: red;
+    color: white;
+  }
+  .lightred{
+    border: 1px solid red ;
   }
   @media only screen and (max-width: 750px) {
   }

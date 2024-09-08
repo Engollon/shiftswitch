@@ -5,6 +5,7 @@ let employeeShiftsCount = {};
 let employeeDispoCount = {};
 let employeeSwapTakeCount = {};
 let employeeSwapAskCount = {};
+let employeecanceledCount = {};
 let employees=[];
 function show(){
     showStats=!showStats;
@@ -15,7 +16,6 @@ async function getStats() {
     try {
       const userData = await pb.collection('users').getFullList({ sort: '-created' });
         employees=userData;
-        console.log(userData);
       const shiftData = await pb.collection('shifts').getFullList({
         expand: 'employee',
         fields:"expand.employee.username",
@@ -30,12 +30,10 @@ async function getStats() {
         }
         employeeSwapTakeCount[user.username] = user.swapTake;
         employeeSwapAskCount[user.username] = user.swapAsk;
+        employeecanceledCount[user.username] = user.numcanceled;
       });
         employeeShiftsCount = Object.fromEntries(
             Object.entries(employeeShiftsCount).sort(([,a], [,b]) => b - a)
-        );
-        employeeDispoCount = Object.fromEntries(
-            Object.entries(employeeDispoCount).sort(([,a], [,b]) => b - a)
         );
         employeeSwapTakeCount = Object.fromEntries(
             Object.entries(employeeSwapTakeCount).sort(([,a], [,b]) => b - a)
@@ -43,19 +41,22 @@ async function getStats() {
         employeeSwapAskCount = Object.fromEntries(
             Object.entries(employeeSwapAskCount).sort(([,a], [,b]) => b - a)
         );
+        employeecanceledCount = Object.fromEntries(
+            Object.entries(employeecanceledCount).sort(([,a], [,b]) => b - a)
+        );
       
-        employeeShiftsCount = Object.fromEntries(
-            Object.entries(employeeShiftsCount).slice(0, 4)
-        );
-        employeeDispoCount = Object.fromEntries(
-            Object.entries(employeeDispoCount).slice(0, 4)
-        );
 
+        employeeShiftsCount = Object.fromEntries(
+            Object.entries(employeeShiftsCount).slice(0, 8)
+        );
         employeeSwapAskCount = Object.fromEntries(
-            Object.entries(employeeSwapAskCount).slice(0, 4)
+            Object.entries(employeeSwapAskCount).slice(0, 8)
         );
         employeeSwapTakeCount = Object.fromEntries(
-            Object.entries(employeeSwapTakeCount).slice(0, 4)
+            Object.entries(employeeSwapTakeCount).slice(0, 8)
+        );
+        employeecanceledCount = Object.fromEntries(
+            Object.entries(employeecanceledCount).slice(0, 8)
         );
     } catch (error) {
       console.error("Error:", error);
@@ -93,16 +94,6 @@ function getPic(username){
         {/each}
     </div>
     <div class="panel">
-        <div class="title"> # Jours Dispos</div>
-        {#each Object.entries(employeeDispoCount) as [username, dispoCount]}
-        <div class="value">
-            <img src={ getPic(username)? getPic(username) :"nopic.png"} />
-            {username}
-            <div class="val"> {dispoCount} </div>
-        </div>
-        {/each}
-    </div>
-    <div class="panel">
         <div class="title">Remplacements pris</div>
         {#each Object.entries(employeeSwapTakeCount) as [username, Count]}
         <div class="value">
@@ -115,6 +106,16 @@ function getPic(username){
     <div class="panel">
         <div class="title">Remplacements demandé</div>
         {#each Object.entries(employeeSwapAskCount) as [username, Count]}
+        <div class="value">
+            <img src={ getPic(username)? getPic(username) :"nopic.png"} />
+            {username}
+            <div class="val"> {Count} </div>
+        </div>
+        {/each}
+    </div>
+    <div class="panel">
+        <div class="title">Horaires anulées</div>
+        {#each Object.entries(employeecanceledCount) as [username, Count]}
         <div class="value">
             <img src={ getPic(username)? getPic(username) :"nopic.png"} />
             {username}
@@ -167,7 +168,7 @@ function getPic(username){
 }
 .container{
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 5px;
     margin-top: 5px;
 }

@@ -1,6 +1,6 @@
 <script> 
     import {hideOthers,renderDate,shifts,swapMsg,takeMsg,MainC,BackC} from './preferances'
-    import {currentUser,pb} from './pocketbase'
+    import {currentUser,pb,isAdmin} from './pocketbase'
     import {onMount,onDestroy} from 'svelte';
     export let shiftsByDate;
     export let days;
@@ -8,7 +8,18 @@
         if(confirm($currentUser.id == selectedItemId.expand?.employee?.id?$swapMsg + "\n" +new Date(selectedItemId.dateStart).toLocaleDateString('default') +" - "+selectedItemId.location:$takeMsg+ "\n" +new Date(selectedItemId.dateStart).toLocaleDateString('default')+" - "+selectedItemId.location )){
           if($currentUser.id == selectedItemId.expand?.employee?.id){
             selectedItemId.swap=!selectedItemId.swap;
+            if(selectedItemId.swap){
+                // add 1 to swap ask for the GB who ask for a swap
+                const record2 =await pb.collection('users').getOne(selectedItemId.expand?.employee?.id,{"fields":"swapAsk"});
+                await pb.collection('users').update(selectedItemId.expand?.employee?.id, {"swapAsk":record2.swapAsk+1});
+            }else{
+                // remove 1 to swap ask for the GB who ask for a swap no more
+                const record2 =await pb.collection('users').getOne(selectedItemId.expand?.employee?.id,{"fields":"swapAsk"});
+                await pb.collection('users').update(selectedItemId.expand?.employee?.id, {"swapAsk":record2.swapAsk-1});
+            }
           }else{
+              // add one to swapTake for the orginal GB and add one to swapTake for the remplacant(currentuser)
+              const record = await pb.collection('users').getOne($currentUser.id,{"fields":"swapTake"});
               selectedItemId.swap=!selectedItemId.swap;
               selectedItemId.expand.employee=$currentUser;
           }
@@ -24,17 +35,37 @@
       function swapcheck(sshift){
         return $shifts.find(shift => shift.expand?.employee.id === $currentUser.id && sshift.dateStart.split(' ')[0]==shift.dateStart.split(' ')[0]);
       }
+    async function cancel(selectedItemId){
+      //change the canceled status
+        if(confirm("Voulez-vous vraiment changer le status de cet horaire?")){
+          //set status to opposite
+          selectedItemId.canceled=!selectedItemId.canceled
+          const record = await pb.collection('users').getOne(selectedItemId.expand?.employee?.id,{"fields":"numcanceled"});
+    
+          if(selectedItemId.canceled){
+            //add one to the personell cancel list.
+            await pb.collection('users').update(selectedItemId.expand?.employee?.id, {"numcanceled": record.numcanceled+1});
+          }else{
+            //remove one to the personell cancel list.
+            await pb.collection('users').update(selectedItemId.expand?.employee?.id,{"numcanceled": record.numcanceled-1});
+          }
+        }
+        const data = {
+            "canceled" : selectedItemId.canceled
+          };
+          await pb.collection('shifts').update(selectedItemId.id,data);
+    }
     let weekday = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
 
     function poolletters(pool){
       if (pool== "Engollon"){
-        return "E"
+        return "Engollon"
       }
       if (pool== "GSC"){
-        return "G"
+        return "GSC"
       }
-      if (pool== "Fontnelle"){
-        return "F"
+      if (pool== "Fontenelle"){
+        return "Fontenelle"
       }
         
 
@@ -55,23 +86,39 @@
         {#each shiftsByDate[day] as shift}
           {#if new Date(day).getTime()>=new Date().getTime()}
             {#if shift.expand?.employee?.username === $currentUser.username}
-                <div class={shift.swap? "shift swap":"shift"} on:click={()=>swap(shift)}>
+                <div class={shift.swap? (shift.canceled? "shift swap red":"shift swap"):(shift.canceled?"shift red" :"shift")}>
+                  <div class="datasec" on:click={()=>swap(shift)}>
                     <div class="name">{shift.expand?.employee?.username}</div>
                     <div class="loc">{poolletters(shift.location)} | {shift.type}</div>
                     <div class="loc">{new Date(shift.dateStart).getHours()}h{new Date(shift.dateStart).getMinutes()}-{new Date(shift.dateEnd).getHours()}h{new Date(shift.dateEnd).getMinutes()}</div>
+                  </div>
+                  <div>
+                    {#if $isAdmin}
+                        <div on:click={()=>cancel(shift)}>{shift.canceled?'✔️':'❌'}</div>
+                      {/if}
+                    </div>
                 </div>
             {:else}
-              <div class={(shift.swap && !swapcheck(shift))? "shift swap":"shift noswap"} on:click={() => {if (shift.swap && !swapcheck(shift)){swap(shift)}}}>
+              <div class={(shift.swap && !swapcheck(shift))? (shift.canceled? "shift swap red":"shift swap"):(shift.canceled?"shift noswap red" :"shift noswap")} >
+                <div class="datasec" on:click={() => {if (shift.swap && !swapcheck(shift)){swap(shift)}}}>
                 <div class="name">{shift.expand?.employee?.username}</div>
                 <div class="loc">{poolletters(shift.location)} | {shift.type}</div>
                 <div class="loc">{new Date(shift.dateStart).getHours()}h{new Date(shift.dateStart).getMinutes()}-{new Date(shift.dateEnd).getHours()}h{new Date(shift.dateEnd).getMinutes()}</div>
               </div>
+              <div>
+                {#if $isAdmin}
+                    <div on:click={()=>cancel(shift)}>{shift.canceled?'✔️':'❌'}</div>
+                  {/if}
+                </div>
+              </div>
             {/if}
           {:else}
-            <div class="shift past">
+            <div class="{shift.canceled?'shift past lightred':'shift past '}">
+              <div>
               <div class="name"> {shift.expand?.employee?.username}</div>
               <div class="loc">{poolletters(shift.location)} | {shift.type}</div>
               <div class="loc">{new Date(shift.dateStart).getHours()}h{new Date(shift.dateStart).getMinutes()}-{new Date(shift.dateEnd).getHours()}h{new Date(shift.dateEnd).getMinutes()}</div>
+              </div>
             </div>
           {/if}
         {/each}
@@ -116,9 +163,11 @@
       margin-right: 2px;
     }
     .shift{
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
       font-size: medium;
       display: flex;
-      flex-direction: column;
       align-items: center;
       background-color:rgb(255, 255, 255); 
       border: 1px solid white; 
@@ -130,6 +179,9 @@
       
     }
     .noswap{
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
       background-color: transparent ;
       border: 1px solid white;
       color: white;
@@ -157,6 +209,17 @@
       margin-top: 5px;
       justify-items: center;
       padding:0.2rem;
+    }
+    .datasec{
+    flex-grow: 1;
+    }
+    .red{
+      background-color: red;
+      border-color: red;
+      color: white;
+    }
+    .lightred{
+      border: 1px solid red ;
     }
     
   

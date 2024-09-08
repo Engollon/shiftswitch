@@ -110,7 +110,7 @@
                 <option selected>Tout</option>
                 <option>Engollon</option>
                 <option>GSC</option>
-                <option>Fontnelle</option>
+                <option>Fontenelle</option>
             </select> 
         </div>
         <div>
@@ -127,13 +127,7 @@
         {/each}
         {#if resShifts.length!=0}
             <div class="subsection">- {resShifts.length} Résultats -</div>
-        {/if}
-        
-    <div class="section">
-        <div class="header">Dev Tools</div>
-    </div>            
-
-        
+        {/if}        
 </div>
 <style>
 .msg{

@@ -21,7 +21,7 @@
         pb.authStore.clear();
       }
       onMount(()=>{
-        imageUrl.set(pb.files.getUrl($currentUser, $currentUser.avatar, {'thumb': '100x250'}))
+        imageUrl.set(pb.files.getUrl($currentUser, $currentUser.avatar, {'thumb': '100x100'}))
       });
       async function getImage(){
          //const record = await pb.collection('users').getOne($currentUser.id, {});
@@ -38,7 +38,7 @@
     <button title="Aide" on:click={toggleabout} class="toggle-button"><img src="help_2.png"></button>
     <button title={$useGrid?"Scroll":"Calendrier"} on:click={toggleLayout} class="toggle-button grid"><img src={$useGrid?'scroll.png':'grid.png'}/></button>
     <button title={$hideOthers?"Tout les horaires":"Seulement mes horaires"} on:click={toggleOthers} class="toggle-button"><img src={$hideOthers?'single_user.png':'multi_user.png'}/></button>
-    <button title={$poolfilter?"Seulement Engollon":"Tout les Piscines"} on:click={togglepool} class="toggle-button"><img src={$poolfilter?'swap_active.png':'swap_inactive.png'}/></button>
+    <!--<button title={$poolfilter?"Seulement Engollon":"Tout les Piscines"} on:click={togglepool} class="toggle-button"><img src={$poolfilter?'swap_active.png':'swap_inactive.png'}/></button>-->
     <button title="Réglages" on:click={toggleSettings} class="toggle-button"><img src={$imageUrl? $imageUrl:"nopic.png"} class="profilepic"></button>
     <button title="Déconnexion" on:click={logout} class="toggle-button"><img src="logout.png"></button>
   </div>
@@ -55,11 +55,11 @@
       line-height: 0px;
     }
     .toggle-button img {
-      width: 30px;
+      width: 40px;
       height: auto;
     }
     .profilepic{
-       border-radius: 2px;
+       border-radius: 4px;
     }
     .help{
       color:white;

@@ -4,17 +4,26 @@
 
     //handles the swap of a shift
     async function swap(selectedItemId){
+        console.log("Swap")
     if(confirm($currentUser.id == selectedItemId.expand?.employee?.id?$swapMsg + "\n" +new Date(selectedItemId.dateStart).toLocaleDateString('default') +" - "+selectedItemId.location:$takeMsg+ "\n" +new Date(selectedItemId.dateStart).toLocaleDateString('default')+" - "+selectedItemId.location )){
           if($currentUser.id == selectedItemId.expand?.employee?.id){
             selectedItemId.swap=!selectedItemId.swap;
+            
+            if(selectedItemId.swap){
+                // add 1 to swap ask for the GB who ask for a swap
+                const record2 =await pb.collection('users').getOne(selectedItemId.expand?.employee?.id,{"fields":"swapAsk"});
+                await pb.collection('users').update(selectedItemId.expand?.employee?.id, {"swapAsk":record2.swapAsk+1});
+                console.log("adding one to swap ask")
+            }else{
+                // remove 1 to swap ask for the GB who ask for a swap no more
+                const record2 =await pb.collection('users').getOne(selectedItemId.expand?.employee?.id,{"fields":"swapAsk"});
+                await pb.collection('users').update(selectedItemId.expand?.employee?.id, {"swapAsk":record2.swapAsk-1});
+                console.log("removing one to swap ask")
+            }
           }else{
-            // add one to swapAsk for the orginal GB and add one to swapTake for the remplacant(currentuser)
+            // add one to swapTake for the orginal GB and add one to swapTake for the remplacant(currentuser)
             const record = await pb.collection('users').getOne($currentUser.id,{"fields":"swapTake"});
             await pb.collection('users').update($currentUser.id, {"swapTake":record.swapTake+1});
-
-            // add 1 to swap ask for the GB who ask for a swap
-            const record2 =await pb.collection('users').getOne(selectedItemId.expand?.employee.id,{"fields":"swapAsk"});
-            await pb.collection('users').update(selectedItemId.expand?.employee.id, {"swapAsk":record2.swapAsk+1});
 
             selectedItemId.swap=!selectedItemId.swap;
             selectedItemId.expand.employee=$currentUser;

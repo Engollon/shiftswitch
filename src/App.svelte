@@ -8,9 +8,8 @@
   import Login from "./lib/Login.svelte";
   import Shifts from "./lib/Shifts.svelte";
   import Swaps from "./lib/Swaps.svelte";
-  //import Data from "./lib/old/Data.svelte";
-  import {useGrid,renderDate,imageUrl,BackC,about,NN,shifts} from './lib/preferances'
-  import {currentUser,pb} from './lib/pocketbase'
+  import {useGrid,renderDate,imageUrl,BackC,about,shifts} from './lib/preferances'
+  import {currentUser,pb,isAdmin} from './lib/pocketbase'
   import {onMount} from 'svelte'   
   import About from "./lib/About.svelte";
 
@@ -22,6 +21,7 @@
       expand:'employee',
     }); 
     $shifts=resultList;
+    $isAdmin=$currentUser.isAdmin
   });
 
   //realtime evetents form PB
@@ -29,17 +29,12 @@
     if(e.action=="update"){//if a shift was updated
       $shifts=$shifts.map(obj => (obj.id === e.record.id ? { ...obj, ...e.record } : obj));
       if (e.record.swap== true){
-        notify(e);
       }
     }else if(e.action=='delete'){//if a shift was deleted
       $shifts=$shifts.filter(obj => obj.id !== e.record.id);
     }else if(e.action=='create'){//if a shift was created
       $shifts=[...$shifts, e.record]; // not working
-     // console.log($shifts);
-    }else{
-     // console.log("other",e.action,e.record);
-    }
-    //console.log(e.action,e.record);
+    }else{}
     //refresh(); rate limiting
   }); // the update only returns the id and not the expand of the employee
   async function refresh(){
@@ -48,23 +43,6 @@
                 expand:'employee',
             }); 
             $shifts=resultList;
-  }
-
-
-
-  async function notify(e){
-    const record = await pb.collection('users').getFirstListItem(`id="${e.record.employee}"`, {});
-    navigator.serviceWorker.ready.then( reg => { reg.showNotification(`${record.username} a besion d'un remplacement le ${new Date(e.record.dateStart).toLocaleDateString()}!`)});
-      Notification.requestPermission().then(perm=>{
-      if (perm==="granted"){
-        const notif=new Notification("Demande de remplacement ShiftSwitch",{
-            body: `${record.username} a besion d'un remplacement le ${new Date(e.record.dateStart).toLocaleDateString()}!`
-          });
-      }else{
-        //user denied permission
-      }
-    });
-    
   }
 </script>
 {#if $currentUser && !$about}

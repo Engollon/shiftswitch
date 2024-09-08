@@ -1,35 +1,45 @@
 <script>
 //UI elements to allow for uploading shift data form a CSV file
+// Logic: validate format
+//        get list of each shift
+//        display based on non engollon vs engollon
+//
 import {pb,isAdmin,currentUser} from './pocketbase';
 import {dispos, shifts,seasonend,seasonstart,T,N,n} from './preferances'
 let newshifts=[]
 let files;
 let csvData = [];
+let header=null;
 let action=false;
 let num=0
 let tot=0
 let btext=""
-let typehorarie=false // true if horaire engolon
 
+function validate(data){
+    if (data[0].includes("Date") &&(data[0].includes("Lieu")||data[0].includes("Lieu\r"))&&data[0].includes("GB 1")&&data[0].includes("Horaire")){
+        return true // the file is valid
+    }  
+    else{
+        return false // the file is not valid
+    }   
+}
 function handleFileChange(event) {
+    csvData=[]
+    newshifts=[]
     files = event.target.files;
     if (files.length > 0) {
       const file = files[0];
       const reader = new FileReader();
-
       reader.onload = function(e) {
         const text = e.target.result;
-        csvData = processCSV(text);
-       // console.log(csvData)
-       // console.log(typehorarie,"TP")
-        if(typehorarie){ //if engollon horaire
-            parseCSV(csvData) 
-        }else{
-            parseCSVOther(csvData)
-        }
         
+        csvData = processCSV(text);
+        if (validate(csvData)){
+            parseCSV(csvData)
+        }else{
+             alert("Le fichier n'as pas le bon format!")
+        }
       };
-
       reader.readAsText(file);
     }
 }
@@ -37,16 +47,20 @@ function processCSV(text) {
     // Split the text into an array of lines
     const lines = text.split('\n');
     const data = [];
-    lines.forEach(line => {
-      const columns = line.split(',');
-      // Assuming the first line is the header
-      if (data.length === 0) {
-        data.push(columns);
-      } else {
-        // Handle the columns array as needed
-        data.push(columns);
-      }
+    lines.forEach((line, index) => {
+        const cleanedLine = line.replace(/\r$/, '');
+        const columns = cleanedLine.split(',');
+        if (index === 0) {
+            header = columns;  // Save the first line to the header variable
+            data.push(columns);
+        } else {
+            if(columns[getindex("Date")]!==""){
+                data.push(columns); // Push the rest of the lines to the data array
+            }else{
+            }
+        } 
     });
+    data.pop(); //removes the last empt line
     return data;
 }
 function removeAccents(str) {
@@ -71,91 +85,84 @@ function removeAccents(str) {
         return ""
     }
 }
+function getindex(string,array){
+    return header.indexOf(string);
+}
 function parseCSV(csvData) {
     newshifts=[]
-    let result = csvData.map(row => row.filter((_, index) => index !== 0));
+    let result = csvData//csvData.map(row => row.filter((_, index) => index !== 0));
     //create an array with all the new shifts to add
+    //console.log(result)
     for(let date of result.slice(1)){
         //for each day, get the date:
-        let day=new Date(date[0]).getDate()
-        let month=new Date(date[0]).getMonth()
-        let year=new Date(date[0]).getFullYear()
-        //add gb based of schedule
-        let gb1=removeAccents(String(date[2]))
-        let gb2=removeAccents(String(date[3]))
-        let gb3=removeAccents(String(date[4]))
-        let gb4=removeAccents(String(date[5]))
-        let resp=removeAccents(String(date[6]))
-        switch (date[1]) {
-
-            //names are normalised to remove accents
-                case "A":
-                newshifts.push([gb1,new Date(year,month,day,9),new Date(year,month,day,19,30),"GB1"])
-                newshifts.push([gb3,new Date(year,month,day,9),new Date(year,month,day,19,30),"GB2"])
-                    break;
-                case "B":
-                newshifts.push([gb1,new Date(year,month,day,9),new Date(year,month,day,19,30),"GB1"])
-                newshifts.push([gb3,new Date(year,month,day,9),new Date(year,month,day,19,30),"GB2"])
-                newshifts.push([gb4,new Date(year,month,day,11),new Date(year,month,day,19,0),"GB3"])
-                    break;
-                case "C":
-                newshifts.push([gb2,new Date(year,month,day,7),new Date(year,month,day,19,30),"GB1bis"])
-                newshifts.push([gb3,new Date(year,month,day,9),new Date(year,month,day,19,30),"GB2"])
-                newshifts.push([gb4,new Date(year,month,day,11),new Date(year,month,day,19,0),"GB3"])
-                    break;
-                case "D":
-                newshifts.push([gb2,new Date(year,month,day,7),new Date(year,month,day,19,30),"GB1bis"])
-                newshifts.push([gb3,new Date(year,month,day,9),new Date(year,month,day,19,30),"GB2"])
-                newshifts.push([gb4,new Date(year,month,day,11),new Date(year,month,day,19,0),"GB3"])
-                    break;
-                case "E":
-                newshifts.push([gb1,new Date(year,month,day,9),new Date(year,month,day,20,30),"GB1"])
-                newshifts.push([gb3,new Date(year,month,day,9),new Date(year,month,day,20,30),"GB2"])
-                newshifts.push([gb4,new Date(year,month,day,11),new Date(year,month,day,20,30),"GB3"])
-                    break;
-                case "F":
-                newshifts.push([gb2,new Date(year,month,day,7),new Date(year,month,day,20,30),"GB1"])
-                newshifts.push([gb3,new Date(year,month,day,9),new Date(year,month,day,20,30),"GB2"])
-                newshifts.push([gb4,new Date(year,month,day,11),new Date(year,month,day,20,30),"GB3"])
-                    break;
-                case "G":
-                newshifts.push([gb2,new Date(year,month,day,7),new Date(year,month,day,20,30),"GB1bis"])
-                newshifts.push([gb3,new Date(year,month,day,9),new Date(year,month,day,20,30),"GB2"])
-                newshifts.push([gb4,new Date(year,month,day,11),new Date(year,month,day,20,30),"GB3"])
-                    break;
-                default:
-                //console.log(date[1])
-                    
-        }
-        if(resp!=""){
-            newshifts.push([resp,new Date(year,month,day,7),new Date(year,month,day,20,0),"Resp"])
+        let day=date[getindex("Date")].split("/")[0]
+        let month=date[getindex("Date")].split("/")[1]
+        let year=date[getindex("Date")].split("/")[2]
+        if(date[getindex("Lieu")]=="Engollon"){
+            //console.log("Date is engollon")
+            //add gb based of schedule
+            let gb1=removeAccents(String(date[3])) //get index based on first array
+            let gb2=removeAccents(String(date[4]))
+            let gb3=removeAccents(String(date[5]))
+            let gb4=removeAccents(String(date[6]))
+            let resp=removeAccents(String(date[7]))
+            switch (date[getindex("Horaire")]) {
+                //names are normalised to remove accents
+                    case "A":
+                    newshifts.push([gb1,new Date(year,month-1,day,9),new Date(year,month-1,day,19,30),"GB1","Engollon"])
+                    newshifts.push([gb3,new Date(year,month-1,day,9),new Date(year,month-1,day,19,30),"GB2","Engollon"])
+                        break;
+                    case "B":
+                    newshifts.push([gb1,new Date(year,month-1,day,9),new Date(year,month-1,day,19,30),"GB1","Engollon"])
+                    newshifts.push([gb3,new Date(year,month-1,day,9),new Date(year,month-1,day,19,30),"GB2","Engollon"])
+                    newshifts.push([gb4,new Date(year,month-1,day,11),new Date(year,month-1,day,19,0),"GB3","Engollon"])
+                        break;
+                    case "C":
+                    newshifts.push([gb2,new Date(year,month-1,day,7),new Date(year,month-1,day,19,30),"GB1bis","Engollon"])
+                    newshifts.push([gb3,new Date(year,month-1,day,9),new Date(year,month-1,day,19,30),"GB2","Engollon"])
+                    newshifts.push([gb4,new Date(year,month-1,day,11),new Date(year,month-1,day,19,0),"GB3","Engollon"])
+                        break;
+                    case "D":
+                    newshifts.push([gb2,new Date(year,month-1,day,7),new Date(year,month-1,day,19,30),"GB1bis","Engollon"])
+                    newshifts.push([gb3,new Date(year,month-1,day,9),new Date(year,month-1,day,19,30),"GB2","Engollon"])
+                    newshifts.push([gb4,new Date(year,month-1,day,11),new Date(year,month-1,day,19,0),"GB3","Engollon"])
+                        break;
+                    case "E":
+                    newshifts.push([gb1,new Date(year,month-1,day,9),new Date(year,month-1,day,20,30),"GB1","Engollon"])
+                    newshifts.push([gb3,new Date(year,month-1,day,9),new Date(year,month-1,day,20,30),"GB2","Engollon"])
+                    newshifts.push([gb4,new Date(year,month-1,day,11),new Date(year,month-1,day,20,30),"GB3","Engollon"])
+                        break;
+                    case "F":
+                    newshifts.push([gb2,new Date(year,month-1,day,7),new Date(year,month-1,day,20,30),"GB1","Engollon"])
+                    newshifts.push([gb3,new Date(year,month-1,day,9),new Date(year,month-1,day,20,30),"GB2","Engollon"])
+                    newshifts.push([gb4,new Date(year,month-1,day,11),new Date(year,month-1,day,20,30),"GB3","Engollon"])
+                        break;
+                    case "G":
+                    newshifts.push([gb2,new Date(year,month-1,day,7),new Date(year,month-1,day,20,30),"GB1bis","Engollon"])
+                    newshifts.push([gb3,new Date(year,month-1,day,9),new Date(year,month-1,day,20,30),"GB2","Engollon"])
+                    newshifts.push([gb4,new Date(year,month-1,day,11),new Date(year,month-1,day,20,30),"GB3","Engollon"])
+                        break;
+                    default:
+            }
+            if(resp!=""){
+                newshifts.push([resp,new Date(year,month-1,day,7),new Date(year,month-1,day,20,0),"Resp","Engollon"])
+            }else{
+                //Christophe is resp
+            }
         }else{
-            //newshifts.push(["Christophe",new Date(year,month,day,7),new Date(year,month,day,20,0)]) Don't add Christophe
+            let gb1=removeAccents(String(date[getindex("GB 1")]))
+            const [hoursS, minutesS] = String(date[getindex("Horaire")].split('-')[0]).split('h');
+            const [hoursF, minutesF] = String(date[getindex("Horaire")].split('-')[1]).split('h');
+            let pool=String(date[getindex("Lieu")])
+            if(pool=="La Fontenelle"){pool="Fontenelle"}
+            newshifts.push([gb1,new Date(year,month-1,day,Number(hoursS),Number(minutesS)),new Date(year,month-1,day,Number(hoursF),Number(minutesF)),"GB1",pool])
         }
+
+
     }
-    newshifts.pop()
+   // console.log(newshifts)
 }
-function parseCSVOther(csvData){
-    newshifts=[]
-    for(let date of csvData.slice(1)){
-        let day=date[1].split('/')[0]
-        let month=date[1].split('/')[1]
-        let year=date[1].split('/')[2]
-        let gb=removeAccents(String(date[3]))
-        if(gb=="Romane"){gb="AnthonyRomane"}
-        else if (gb=="François"){gb="Francois"}
-        let pool=String(date[9])
-        if (pool=="GsC\r"){pool="GSC"}
-        else if(pool=="La Fontenelle\r"){pool="Fontnelle"}
-        const [hoursS, minutesS] = String(date[2].split('-')[0]).split('h');
-        const [hoursF, minutesF] = String(date[2].split('-')[1]).split('h');
-       // console.log(year,month,day,Number(hoursS),Number(minutesS))
-        newshifts.push([gb,new Date(year,month-1,day,Number(hoursS),Number(minutesS)),new Date(year,month-1,day,Number(hoursF),Number(minutesF)),"GB1",pool])
-                
-    }
-    newshifts.pop() 
-    //console.log(newshifts,"new shifts")
-}
+
 async function addshifts(){
     let employees = await pb.collection('users').getFullList({sort: '-created',});
     //console.log(employees)
@@ -165,7 +172,7 @@ async function addshifts(){
             "dateEnd": shift[2],
             "employee": employees.find(employee => employee.username==shift[0]).id,
             "swap": false,
-            "location": typehorarie?"Engollon":shift[4],
+            "location": shift[4],
             "type":shift[3]
         };
         //console.log(data,"DATA")
@@ -187,8 +194,8 @@ async function addfromCSV(){
     return !$shifts.some(obj => obj.expand.employee.username === element[0]&& (new Date(obj.dateStart).getTime()==element[1].getTime()) && (new Date(obj.dateEnd).getTime()==element[2].getTime()) && obj.location == "Engollon");//)
     });
     */
-    console.log(newshifts)
-    console.log($shifts)
+    //console.log(newshifts)
+    //console.log($shifts)
     
     await addshifts()
     tot=0
@@ -202,15 +209,11 @@ async function addfromCSV(){
     <div class="action">
       Pour ajouter des horaires d'un fichier CSV (voir le manuel pour avoir le bon format)
       <input type="file" accept=".csv" on:change={handleFileChange} />
-      <div> Horaire Engollon?
-      <input type="checkbox" bind:checked={typehorarie}></div>
-  </div>
-  <div class="action">
     {#each newshifts as shift }
         <div class="shift">
             <div>{shift[0]}</div> -
-            <div>{shift[1].toISOString()}</div> - 
-            <div>{shift[2].toISOString()}</div> - 
+            <div>{shift[1]}</div> - 
+            <div>{shift[1].toISOString().substring(11,16)}-{shift[2].toISOString().substring(11,16)}</div> - 
             <div>{shift[3]}</div> - 
             <div>{shift[4]}</div>
         </div>

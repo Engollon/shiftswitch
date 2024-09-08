@@ -41,12 +41,12 @@
             <img src='valderuzlogo.png' alt="Logo">
             <div class="title">ShiftSwitch</div>
         </div>
-            <div class="news">Les accents dans les noms me compliquent la vie...</div>
+            <div class="news">Vous pouvez maintenant vous faire annuler !</div>
         <div>{$version}</div>
         <form on:submit|preventDefault class="form">
                 <div class={msg==""?"msg dspNone":"msg"}>{msg}</div>
             <input placeholder="Nom d'utilisateur: votre nom" type="text" bind:value={username} bind:this={inputRef} class="input"/>
-            <input placeholder="Mot de passe: 12345" type="password"bind:value={password} class="input"/>
+            <input placeholder="Mot de passe" type="password"bind:value={password} class="input"/>
             <button on:click={login} class="button">Login</button>
         </form>  
     </div>

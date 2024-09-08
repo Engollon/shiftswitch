@@ -31,8 +31,6 @@ function openPDF() {
     <div class="para">
         ShiftSwitch est un site web pour faciliter la gestion des horaires. Les fonctionnalités principales sont :
         <ul>
-            <li>La gestion des disponibilités</li>
-            <li>La génération des horaires selon les disponibilités</li>
             <li>La gestion des horaires (calendrier)</li>
             <li>La gestion des remplacements</li>
         </ul>
@@ -44,23 +42,16 @@ function openPDF() {
         <div class="subtitle">✅ Profil :</div>
         <ol>
             <li>Connectez-vous à <a href="https://engollon.github.io/shiftswitch/" class="link">https://engollon.github.io/shiftswitch/</a></li>
-            <li>Utilisez votre nom (Matias) et le mot de passe par défaut <span style="color: #D95706;">12345</span></li>
+            <li>Utilisez votre nom et le mot de passe par défaut <span style="color: #D95706;">12345</span></li>
             <li>Sélectionnez votre Profil (Photo de profil en haut à droite). Elle ressemble à ça :</li>
         </ol>
         <div class="c">
             <img src={getPic() ? getPic() : "nopic.png"} class="c"/>
         </div>
         <ol start="4">
-            <li>Sélectionnez votre nom et changez votre mot de passe (Quand vous l'oublierez, Christophe ou moi pouvons le réinitialiser)</li>
+            <li>Sélectionnez votre nom et changez votre mot de passe (Quand vous l'oublierez, un administrateur peut le réinitialiser)</li>
             <li>Si vous souhaitez changer votre photo de profil, sélectionnez-la dans votre profil</li>
         </ol>
-    </div>
-    <div class="para">
-        <div class="subtitle">✅ Disponibilités :</div>
-        Dans votre profil, il y a deux choses. Premièrement vos disponibilités, en utilisant les deux flèches dans la barre de navigation, vous pouvez sélectionner un mois et remplir vos disponibilités. Si la date est grisée, elle est en dehors de la saison. Sélectionnez une date, elle deviendra orange, signifiant que vous êtes disponible. Pour sélectionner plusieurs jours d'un coup, gardez la touche CTRL pressée et sélectionnez le premier et ensuite le dernier jour.
-    </div>
-    <div class="para">
-        En dessous, vous pouvez indiquer le nombre de jours que vous voulez travailler cette saison. Et finalement, vous avez les statistiques (sélectionnez le titre pour charger les données). Il y a aussi la section "Actions" où vous pouvez télécharger un PDF avec tous vos horaires.
     </div>
     <div class="para">
         <div class="subtitle">✅ Horaire :</div>

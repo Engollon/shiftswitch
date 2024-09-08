@@ -11,7 +11,7 @@
     import {onMount} from 'svelte'
     import { createEventDispatcher } from 'svelte';
     const dispatch = createEventDispatcher();
-    let locations =["Engollon","GSC","Fontnelle"]
+    let locations =["Engollon","GSC","Fontenelle"]
     
     function deleteS(){
         dispatch('dShift',{"shift":shift});
@@ -26,7 +26,7 @@
                 "swap": swap,
                 "location": location
             };
-        console.log(data)
+        //console.log(data)
          await pb.collection('shifts').update(shift.id, data);
         dispatch('update');
     }

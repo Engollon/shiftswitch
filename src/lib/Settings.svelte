@@ -4,13 +4,11 @@
     import {pb} from './pocketbase';
     import {onMount} from 'svelte'
     import ChangePassword from './ChangePassword.svelte';
-    import Dispo from './Dispo.svelte'
+  
     import AdminPanel from './Admin_panel.svelte';
     import Statistics from './Statistics.svelte';
     import AddMenu from './AddMenu.svelte';
     import Actions from './Actions.svelte';
-    import Email from './Email.svelte';
-    let email="example@example.com"
       async function toggleGridpref(){
         useGrid.set(!$useGrid);
         const data = {
@@ -19,9 +17,8 @@
         const record = await pb.collection('users').update($currentUser.id, data);
     }
     onMount(()=>{
-        imageUrl.set(pb.files.getUrl($currentUser, $currentUser.avatar, {'thumb': '100x250'}))
+        imageUrl.set(pb.files.getUrl($currentUser, $currentUser.avatar, {'thumb': '100x100'}))
         $isAdmin=pb.authStore.model.isAdmin;
-        email=$currentUser.email
     });
     async function getImage(){
          const record = await pb.collection('users').getOne($currentUser.id, {});
@@ -42,27 +39,6 @@
     let popup = () => {
         showChangePassword = true;
     }
-    //
-    async function updateemail(){
-      try{
-        console.log(email.toString())
-        //await pb.collection('users').requestEmailChange(email);
-        console.log("Updated email")
-      }catch(error){
-        alert(error.message)
-      }
-  }
-  function notifyMe() {
-    Notification.requestPermission().then(perm=>{
-      if (perm==="granted"){
-        const notif=new Notification("test",{
-            body: "Hello"
-          })
-      }else{
-        alert("WTF!?")
-      }
-    })
-  }
 </script>
 
 <div class="card">
@@ -82,21 +58,7 @@
             <ChangePassword onClose={closePopup} />
         {/if}
 </div>
-<!-- not needed
-<div class="dispo">
-    <Dispo/>
-</div>
 
-<div class="card">
-  <div>Email </div>
-  <input type="email" bind:value={email}/>
-  <button class="button" on:click={updateemail}>
-    <button on:click={notifyMe}>Notify me!</button>
-    Changer l'email
-</button>
-
-</div>
---> 
 {#if $isAdmin}
   <AdminPanel/>
   <AddMenu/>
@@ -159,7 +121,7 @@
  .profilepic {
     width: 125px;
     height: auto;
-    border-radius: 2px;
+    border-radius: 4px;
     cursor: pointer;
     
  }.overlay {
