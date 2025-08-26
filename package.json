@@ -10,14 +10,16 @@
     "deploy": "npm run build && npx gh-pages -d dist"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^2.4.2",
+    "@sveltejs/vite-plugin-svelte": "^3.1.2",
     "gh-pages": "^6.0.0",
-    "svelte": "^4.0.5",
-    "vite": "^4.4.5"
+    "svelte": "^4.2.20",
+    "vite": "^5.4.19"
   },
   "dependencies": {
+    "chart.js": "^4.5.0",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.6.0",
-    "pocketbase": "^0.17.3"
+    "pocketbase": "^0.17.3",
+    "svelte-chartjs": "^3.1.5"
   }
 }

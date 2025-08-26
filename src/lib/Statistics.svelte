@@ -1,5 +1,6 @@
 <script>
 import {pb} from './pocketbase';
+import Chart from './Chart.svelte';
 let showStats=false;
 let employeeShiftsCount = {};
 let employeeDispoCount = {};
@@ -7,6 +8,8 @@ let employeeSwapTakeCount = {};
 let employeeSwapAskCount = {};
 let employeecanceledCount = {};
 let employees=[];
+
+
 function show(){
     showStats=!showStats;
     getStats();
@@ -76,11 +79,12 @@ function getPic(username){
 
 
 
-
+let myData = [5, 15, 25, 35, 20, 40, 30];
 </script>
 
 <div class="section">
     <div class="header" on:click={show}> Statistiques</div>
+    <Chart {myData} />
     {#if showStats}
     <div class="container">
     <div class="panel">
