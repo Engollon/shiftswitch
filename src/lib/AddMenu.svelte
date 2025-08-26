@@ -38,6 +38,7 @@ function handleFileChange(event) {
             parseCSV(csvData)
         }else{
              alert("Le fichier n'as pas le bon format!")
+             console.log(csvData);
         }
       };
       reader.readAsText(file);
@@ -175,7 +176,7 @@ async function addshifts(){
             "location": shift[4],
             "type":shift[3]
         };
-        //console.log(data,"DATA")
+        console.log(data,"DATA")
         try{
             await pb.collection('shifts').create(data);
         }catch(e){
