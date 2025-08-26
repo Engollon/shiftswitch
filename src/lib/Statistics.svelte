@@ -1,6 +1,6 @@
 <script>
 import {pb} from './pocketbase';
-import Chart from './Chart.svelte';
+import TallyChart from './TallyChart.svelte';
 let showStats=false;
 let employeeShiftsCount = {};
 let employeeDispoCount = {};
@@ -84,7 +84,7 @@ let myData = [5, 15, 25, 35, 20, 40, 30];
 
 <div class="section">
     <div class="header" on:click={show}> Statistiques</div>
-    <Chart {myData} />
+    <TallyChart {myData} />
     {#if showStats}
     <div class="container">
     <div class="panel">
