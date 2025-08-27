@@ -41,7 +41,7 @@
             <img src='valderuzlogo.png' alt="Logo">
             <div class="title">ShiftSwitch</div>
         </div>
-            <div class="news">Vous pouvez maintenant vous faire annuler !</div>
+            <div class="news">Bientôt les Vacances!</div>
         <div>{$version}</div>
         <form on:submit|preventDefault class="form">
                 <div class={msg==""?"msg dspNone":"msg"}>{msg}</div>

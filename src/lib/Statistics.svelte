@@ -84,7 +84,7 @@ let myData = [5, 15, 25, 35, 20, 40, 30];
 
 <div class="section">
     <div class="header" on:click={show}> Statistiques</div>
-    <TallyChart {myData} />
+    <TallyChart/>
     {#if showStats}
     <div class="container">
     <div class="panel">

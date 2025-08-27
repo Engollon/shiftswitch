@@ -10,9 +10,13 @@
     PointElement,
     LinearScale,
     CategoryScale,
+    TimeScale
   } from "chart.js";
 
+  import "chartjs-adapter-date-fns";
   import { writable } from "svelte/store";
+  import { supabase } from "./supabaseClient";
+  import { onDestroy } from "svelte";
 
   ChartJS.register(
     Title,
@@ -22,78 +26,154 @@
     LineElement,
     PointElement,
     LinearScale,
-    CategoryScale
+    CategoryScale,
+    TimeScale
   );
 
-  // Store for the current day
+  // --- State ---
   let currentDay = writable(new Date());
-
-  // Store for events
   let events = writable([]);
+  let subscription;
 
-  // Generate time labels 8AM → 8PM
-  const generateLabels = () => {
-    const labels = [];
-    for (let h = 8; h <= 20; h++) {
-      labels.push(`${h}:00`);
-    }
-    return labels;
-  };
-  const labels = generateLabels();
-
-  // Convert events to counts per hour
-  $: dataPoints = labels.map((label) => {
-    const hour = parseInt(label.split(":")[0]);
-    return $events.filter((e) => e.getHours() === hour).length;
-  });
-
-  // Chart.js data
+  // --- Chart Data ---
   $: data = {
-    labels,
     datasets: [
       {
-        label: "Events",
-        data: dataPoints,
+        label: "Nb. d'éntrées",
+        data: (() => {
+          let count = 0;
+          return $events.map(e => {
+            count++;
+            return { x: new Date(e.created_at), y: count };
+          });
+        })(),
         borderColor: "steelblue",
         backgroundColor: "rgba(70,130,180,0.2)",
-        fill: true,
-        tension: 0.3,
-        pointRadius: 4,
-      },
-    ],
+        showLine: true,
+        tension: 0.2,
+        pointRadius: 3,
+      }
+    ]
   };
 
-  let options = {
+  // --- Chart Options ---
+  $: options = {
     responsive: true,
     maintainAspectRatio: false,
+     animation: {
+    duration: 0   // disable animation
+  },
     plugins: {
       legend: { display: true },
-      title: { display: true, text: "Events Over Time" },
+      //title: { display: true, text: "Cumulative Events Over Day" }
     },
     scales: {
-      x: { title: { display: true, text: "Time" } },
-      y: { title: { display: true, text: "Number of Events" }, ticks: { stepSize: 1 } },
-    },
-  };
-
-  // Generate mock events for the given day
-  function loadMockData(day) {
-    const newEvents = [];
-    const eventCount = Math.floor(Math.random() * 15) + 5; // 5–20 events
-    for (let i = 0; i < eventCount; i++) {
-      const hour = Math.floor(Math.random() * 13) + 8; // 8–20
-      const min = Math.floor(Math.random() * 60);
-      newEvents.push(new Date(day.getFullYear(), day.getMonth(), day.getDate(), hour, min));
+      x: {
+        type: "time",
+        time: {
+          unit: "hour",
+          tooltipFormat: "HH:mm"
+        },
+        title: { display: true, text: "Heure",
+           color: "#fff"
+        },
+        min: (() => {
+          const d = new Date($currentDay);
+          d.setHours(8, 0, 0, 0);
+          return d;
+        })(),
+        max: (() => {
+          const d = new Date($currentDay);
+          d.setHours(20, 0, 0, 0);
+          return d;
+        })(),
+        ticks: {
+          color: "#fff",  // x-axis tick labels
+          callback: function(value, index, ticks) {
+        // `value` is a timestamp here, so we convert it
+        const date = new Date(value);
+        return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+      }
+        },
+      },
+      y: {
+      title: {
+        display: true,
+        text: "Nb. Culmulatif d'éntrées",
+        color: "#fff"   // y-axis title color
+      },
+      ticks: {
+        color: "#fff"   // y-axis tick labels
+      },
     }
-    events.set(newEvents);
+  }
   }
 
-  // Initialize with today
-  currentDay.subscribe((day) => loadMockData(day));
+  // --- Fetch Events from Supabase ---
+  async function loadEvents(day) {
+    const start = new Date(day);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(day);
+    end.setHours(23, 59, 59, 999);
 
-  // Navigate days
+    const { data: eventsData, error } = await supabase
+      .from("button_presses")
+      .select("*")
+      .gte("created_at", start.toISOString())
+      .lte("created_at", end.toISOString())
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error("Supabase fetch error:", error);
+      events.set([]);
+    } else {
+      //console.log("Fetched events for", day.toDateString(), eventsData);
+      const localEvents = eventsData.filter(e => {
+        const d = new Date(e.created_at);
+        const h = d.getHours();
+        return h >= 8 && h <= 20;
+      });
+      events.set(localEvents);
+    }
+  }
+
+  // --- Subscribe to Realtime Updates ---
+  currentDay.subscribe(async day => {
+    await loadEvents(day);
+
+    // remove old subscription if switching days
+    if (subscription) {
+      await supabase.removeChannel(subscription);
+    }
+
+    // subscribe for new events
+    subscription = supabase
+      .channel("button_presses_realtime")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "button_presses" },
+        payload => {
+          const newEvent = payload.new;
+          const d = new Date(newEvent.created_at);
+          const h = d.getHours();
+          const isSameDay = d.toDateString() === day.toDateString();
+          if (isSameDay && h >= 8 && h <= 20) {
+            events.update(evts => [...evts, newEvent]);
+          }
+        }
+      )
+      .subscribe();
+  });
+
+  onDestroy(() => {
+    if (subscription) {
+      supabase.removeChannel(subscription);
+    }
+  });
+
+  // --- Day navigation ---
   function prevDay() {
-    currentDay.update((d) => {
+    currentDay.update(d => {
       const newDay = new Date(d);
       newDay.setDate(d.getDate() - 1);
       return newDay;
@@ -101,7 +181,7 @@
   }
 
   function nextDay() {
-    currentDay.update((d) => {
+    currentDay.update(d => {
       const newDay = new Date(d);
       newDay.setDate(d.getDate() + 1);
       return newDay;
@@ -113,6 +193,7 @@
   .controls {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     margin-bottom: 10px;
   }
   button {
@@ -125,9 +206,13 @@
 </style>
 
 <div class="controls">
-  <button on:click={prevDay}>&lt; Previous Day</button>
-  <span class="date-label">{$currentDay.toDateString()}</span>
-  <button on:click={nextDay}>Next Day &gt;</button>
+  <button on:click={prevDay}>&lt; Jour Prècedent</button>
+  <div style="text-align: center;">
+    <span class="date-label">{$currentDay.toDateString()}</span>
+    <br />
+    <small>Total Journalier: {$events.length}</small>
+  </div>
+  <button on:click={nextDay}>Jour Suivant &gt;</button>
 </div>
 
 <div style="height: 300px; width: 100%;">
