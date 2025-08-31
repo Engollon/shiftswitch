@@ -166,7 +166,6 @@ function parseCSV(csvData) {
 
 async function addshifts(){
     let employees = await pb.collection('users').getFullList({sort: '-created',});
-    //console.log(employees)
     for(let shift of newshifts){
         const data = {
             "dateStart":shift[1],
@@ -176,7 +175,7 @@ async function addshifts(){
             "location": shift[4],
             "type":shift[3]
         };
-        console.log(data,"DATA")
+        //console.log(data,"DATA")
         try{
             await pb.collection('shifts').create(data);
         }catch(e){
@@ -208,14 +207,22 @@ async function addfromCSV(){
 <div class="section">
     <div class="header">Ajouter un horaire CSV</div>
     <div class="action">
-      Pour ajouter des horaires d'un fichier CSV (voir le manuel pour avoir le bon format)
+    <div>
+        Pour ajouter des horaires d'un fichier CSV (Fichier format: "CSV UTF-8")
+        <a href="/Template_2025.csv" download="Template_2025.csv">
+            <button class="button">Télécharger le modèle CSV</button>
+        </a>
+    </div>
+    <div>
       <input type="file" accept=".csv" on:change={handleFileChange} />
+    </div>
     {#each newshifts as shift }
         <div class="shift">
-            <div>{shift[0]}</div> -
-            <div>{shift[1]}</div> - 
-            <div>{shift[1].toISOString().substring(11,16)}-{shift[2].toISOString().substring(11,16)}</div> - 
-            <div>{shift[3]}</div> - 
+            <div>{shift[0]}</div> 
+            <div>{shift[1].toLocaleDateString()}</div> 
+            <div>{shift[1].toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -
+                 {shift[2].toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>  
+            <div>{shift[3]}</div>  
             <div>{shift[4]}</div>
         </div>
     {/each}
