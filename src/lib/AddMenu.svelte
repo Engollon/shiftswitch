@@ -93,13 +93,13 @@ function parseCSV(csvData) {
     newshifts=[]
     let result = csvData//csvData.map(row => row.filter((_, index) => index !== 0));
     //create an array with all the new shifts to add
-    //console.log(result)
+    console.log(result)
     for(let date of result.slice(1)){
         //for each day, get the date:
         let day=date[getindex("Date")].split("/")[0]
         let month=date[getindex("Date")].split("/")[1]
         let year=date[getindex("Date")].split("/")[2]
-        if(date[getindex("Lieu")]=="Engollon"){
+        if(0){
             //console.log("Date is engollon")
             //add gb based of schedule
             let gb1=removeAccents(String(date[3])) //get index based on first array
@@ -150,18 +150,27 @@ function parseCSV(csvData) {
             }else{
                 //Christophe is resp
             }
-        }else{
-            let gb1=removeAccents(String(date[getindex("GB 1")]))
+        } else {
+            const gbColumns = ["GB 1", "GB 1bis", "GB 2", "GB 3", "GB 4", "Rempl. Resp. exploitation"];
             const [hoursS, minutesS] = String(date[getindex("Horaire")].split('-')[0]).split('h');
             const [hoursF, minutesF] = String(date[getindex("Horaire")].split('-')[1]).split('h');
-            let pool=String(date[getindex("Lieu")])
-            if(pool=="La Fontenelle"){pool="Fontenelle"}
-            newshifts.push([gb1,new Date(year,month-1,day,Number(hoursS),Number(minutesS)),new Date(year,month-1,day,Number(hoursF),Number(minutesF)),"GB1",pool])
+            let pool = String(date[getindex("Lieu")]);
+            if (pool == "La Fontenelle") { pool = "Fontenelle" }
+
+            for (const col of gbColumns) {
+                const val = date[getindex(col)];
+                if (val !== undefined && val !== null && String(val).trim() !== "") {
+                    const gb = removeAccents(String(val));
+                    const horarie = col === "Rempl. Resp. exploitation" ? "Resp"
+                                : col === "GB 1bis" ? "GB 1bis"
+                                : col;
+                    newshifts.push([gb, new Date(year, month-1, day, Number(hoursS), Number(minutesS)), new Date(year, month-1, day, Number(hoursF), Number(minutesF)), horarie, pool])
+                }
+            }
         }
 
-
-    }
-   // console.log(newshifts)
+            }
+            console.log(newshifts)
 }
 
 async function addshifts(){

@@ -10,7 +10,9 @@
     PointElement,
     LinearScale,
     CategoryScale,
-    TimeScale
+    TimeScale,
+    BarController,
+    BarElement
   } from "chart.js";
 
   import "chartjs-adapter-date-fns";
@@ -27,7 +29,9 @@
     PointElement,
     LinearScale,
     CategoryScale,
-    TimeScale
+    TimeScale,
+    BarController,
+    BarElement
   );
 
   // --- State ---
@@ -37,77 +41,112 @@
 
   // --- Chart Data ---
   $: data = {
-    datasets: [
-      {
-        label: "Nb. d'éntrées",
-        data: (() => {
-          let count = 0;
-          return $events.map(e => {
-            count++;
-            return { x: new Date(e.created_at), y: count };
-          });
-        })(),
-        borderColor: "steelblue",
-        backgroundColor: "rgba(70,130,180,0.2)",
-        showLine: true,
-        tension: 0.2,
-        pointRadius: 3,
-      }
-    ]
-  };
+  datasets: [
+    // 1️⃣ Line chart (cumulative count)
+    {
+      type: "line",
+      label: "Éntrées (cumulatif)",
+      data: (() => {
+        let count = 0;
+        return $events.map(e => {
+          count++;
+          return { x: new Date(e.created_at), y: count };
+        });
+      })(),
+      borderColor: "steelblue",
+      backgroundColor: "rgba(70,130,180,0.2)",
+      showLine: true,
+      tension: 0.2,
+      pointRadius: 3,
+      yAxisID: "y", // use left y-axis
+    },
+
+    // 2️⃣ Bar chart (events per hour)
+    {
+      type: "bar",
+      label: "Éntrées par heure",
+      data: (() => {
+        // Count how many events per hour (8–20h)
+        const counts = {};
+        for (let h = 8; h <= 20; h++) {
+          counts[h] = 0;
+        }
+        $events.forEach(e => {
+          const d = new Date(e.created_at);
+          const h = d.getHours();
+          if (h >= 8 && h <= 20) {
+            counts[h]++;
+          }
+        });
+
+        // Build dataset as bar values at each hour
+        return Object.entries(counts).map(([hour, count]) => {
+          const d = new Date($currentDay);
+          d.setHours(hour, 0, 0, 0);
+          return { x: d, y: count };
+        });
+      })(),
+      backgroundColor: "rgba(255, 165, 0, 0.4)", // orange bars
+      borderColor: "orange",
+      borderWidth: 1,
+      yAxisID: "y", // use same y-axis
+    }
+  ]
+};
 
   // --- Chart Options ---
   $: options = {
-    responsive: true,
-    maintainAspectRatio: false,
-     animation: {
+  responsive: true,
+  maintainAspectRatio: false,
+  animation: {
     duration: 0   // disable animation
   },
-    plugins: {
-      legend: { display: true },
-      //title: { display: true, text: "Cumulative Events Over Day" }
-    },
-    scales: {
-      x: {
-        type: "time",
-        time: {
-          unit: "hour",
-          tooltipFormat: "HH:mm"
-        },
-        title: { display: true, text: "Heure",
-           color: "#fff"
-        },
-        min: (() => {
-          const d = new Date($currentDay);
-          d.setHours(8, 0, 0, 0);
-          return d;
-        })(),
-        max: (() => {
-          const d = new Date($currentDay);
-          d.setHours(20, 0, 0, 0);
-          return d;
-        })(),
-        ticks: {
-          color: "#fff",  // x-axis tick labels
-          callback: function(value, index, ticks) {
-        // `value` is a timestamp here, so we convert it
-        const date = new Date(value);
-        return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
-      }
-        },
+  plugins: {
+    legend: { display: true },
+  },
+  scales: {
+    x: {
+      type: "time",
+      time: {
+        unit: "hour",
+        tooltipFormat: "HH:mm",
+        displayFormats: { hour: "HH:mm" }   // <-- force 24h
       },
-      y: {
+      title: { display: true, text: "Heure", color: "#fff" },
+      min: (() => {
+        const d = new Date($currentDay);
+        d.setHours(8, 0, 0, 0);
+        return d;
+      })(),
+      max: (() => {
+        const d = new Date($currentDay);
+        d.setHours(20, 0, 0, 0);
+        return d;
+      })(),
+      ticks: {
+        color: "#fff",
+        callback: function (value) {
+          const date = new Date(value);
+          return date.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false
+          });
+        }
+      }
+    },
+    y: {
       title: {
         display: true,
-        text: "Nb. Culmulatif d'éntrées",
-        color: "#fff"   // y-axis title color
+        text: "Nombre d'entrées",
+        color: "#fff"
       },
-      ticks: {
-        color: "#fff"   // y-axis tick labels
-      },
+      ticks: { color: "#fff" },
+      beginAtZero: true
     }
   }
-  }
+};
+
 
   // --- Fetch Events from Supabase ---
   async function loadEvents(day) {
