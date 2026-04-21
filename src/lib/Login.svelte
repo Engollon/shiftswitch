@@ -41,7 +41,7 @@
             <img src='valderuzlogo.png' alt="Logo">
             <div class="title">ShiftSwitch</div>
         </div>
-            <div class="news">Bientôt les Vacances!</div>
+            <div class="news">Du soleil pour la saison 2026!</div>
         <div>{$version}</div>
         <form on:submit|preventDefault class="form">
                 <div class={msg==""?"msg dspNone":"msg"}>{msg}</div>

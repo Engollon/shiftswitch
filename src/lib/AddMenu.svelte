@@ -16,7 +16,7 @@ let tot=0
 let btext=""
 
 function validate(data){
-    if (data[0].includes("Date") &&(data[0].includes("Lieu")||data[0].includes("Lieu\r"))&&data[0].includes("GB 1")&&data[0].includes("Horaire")){
+    if (data[0].includes("Date") &&(data[0].includes("Lieu")||data[0].includes("Lieu\r"))&&data[0].includes("GB1")&&data[0].includes("Horaire")){
         return true // the file is valid
     }  
     else{
@@ -76,9 +76,17 @@ function removeAccents(str) {
             case "Fran�ois":
                 return "Francois"
             break;
+            case "FranÃ§ois":
+                return "Francois"
+            case "François":
+                return "Francois"
             case "Lo�c":
                 return "Loic"
-            break;
+            case "Léanne":
+                return "Leanne"
+            case "Chloé":
+                return "Chloe"
+                
             default:
                 return str[0].toUpperCase() + str.slice(1);
     }
@@ -87,7 +95,7 @@ function removeAccents(str) {
     }
 }
 function getindex(string,array){
-    return header.indexOf(string);
+     return header.findIndex(h => h.trim() === string.trim());
 }
 function parseCSV(csvData) {
     newshifts=[]
@@ -151,7 +159,7 @@ function parseCSV(csvData) {
                 //Christophe is resp
             }
         } else {
-            const gbColumns = ["GB 1", "GB 1bis", "GB 2", "GB 3", "GB 4", "Rempl. Resp. exploitation"];
+            const gbColumns = ["GB1", "GB1bis", "GB2", "GB3", "GB4", "Rempl. Resp. exploitation"];
             const [hoursS, minutesS] = String(date[getindex("Horaire")].split('-')[0]).split('h');
             const [hoursF, minutesF] = String(date[getindex("Horaire")].split('-')[1]).split('h');
             let pool = String(date[getindex("Lieu")]);
@@ -162,7 +170,7 @@ function parseCSV(csvData) {
                 if (val !== undefined && val !== null && String(val).trim() !== "") {
                     const gb = removeAccents(String(val));
                     const horarie = col === "Rempl. Resp. exploitation" ? "Resp"
-                                : col === "GB 1bis" ? "GB 1bis"
+                                : col === "GB 1bis" ? "GB1bis"
                                 : col;
                     newshifts.push([gb, new Date(year, month-1, day, Number(hoursS), Number(minutesS)), new Date(year, month-1, day, Number(hoursF), Number(minutesF)), horarie, pool])
                 }
@@ -176,6 +184,8 @@ function parseCSV(csvData) {
 async function addshifts(){
     let employees = await pb.collection('users').getFullList({sort: '-created',});
     for(let shift of newshifts){
+        console.log("Looking for:", shift[0]);
+        console.log("Available usernames:", employees.map(e => e.username));
         const data = {
             "dateStart":shift[1],
             "dateEnd": shift[2],
@@ -184,7 +194,7 @@ async function addshifts(){
             "location": shift[4],
             "type":shift[3]
         };
-        //console.log(data,"DATA")
+        console.log(data,"DATA")
         try{
             await pb.collection('shifts').create(data);
         }catch(e){
