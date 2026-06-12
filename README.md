@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # ShiftSwitch
 
 ShiftSwitch est une application pour la gestion des horaires a la piscine d'Engollon:
