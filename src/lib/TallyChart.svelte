@@ -150,32 +150,38 @@
 
   // --- Fetch Events from Supabase ---
   async function loadEvents(day) {
-    const start = new Date(day);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(day);
-    end.setHours(23, 59, 59, 999);
+  const start = new Date(day); start.setHours(0, 0, 0, 0);
+  const end = new Date(day);   end.setHours(23, 59, 59, 999);
 
-    const { data: eventsData, error } = await supabase
+  const pageSize = 1000;
+  let allEvents = [];
+  let from = 0;
+
+  while (true) {
+    const { data: page, error } = await supabase
       .from("button_presses")
       .select("*")
       .gte("created_at", start.toISOString())
       .lte("created_at", end.toISOString())
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: true })
+      .range(from, from + pageSize - 1);
 
     if (error) {
       console.error("Supabase fetch error:", error);
-      events.set([]);
-    } else {
-      //console.log("Fetched events for", day.toDateString(), eventsData);
-      const localEvents = eventsData.filter(e => {
-        const d = new Date(e.created_at);
-        const h = d.getHours();
-        return h >= 8 && h <= 20;
-      });
-      events.set(localEvents);
+      break;
     }
+
+    allEvents = allEvents.concat(page);
+    if (page.length < pageSize) break; // last page
+    from += pageSize;
   }
 
+  const localEvents = allEvents.filter(e => {
+    const h = new Date(e.created_at).getHours();
+    return h >= 8 && h <= 20;
+  });
+  events.set(localEvents);
+  }
   // --- Subscribe to Realtime Updates ---
   currentDay.subscribe(async day => {
     await loadEvents(day);

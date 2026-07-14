@@ -11,7 +11,7 @@ export const renderDate = writable(new Date());
 export const imageUrl = writable(null);
 export const swapMsg=writable("Voulez-vous vraiment changer le statut de remplacement de cet horaire?");
 export const takeMsg=writable("Voulez-vous vraiment remplacer/prendre cet horaire?");
-export const version=writable("v0.7.4");
+export const version=writable("v0.7.6");
 //employee=@request.auth.id || @request.auth.isAdmin=true add back before relase.
 export const shifts=writable([]);
 export const swaps=writable([]);// should not be needed
@@ -26,7 +26,7 @@ export const AcC=writable('#D95706');
 export const n=writable(0);
 export const N=writable(0);
 export const T=writable("");
-
+export const dailycount=writable(0);
 
 
 //fucntion to update the a shift (input is the shift,user,swap,)

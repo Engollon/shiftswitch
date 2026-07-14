@@ -1,5 +1,6 @@
 <script>
     import {useGrid,hideOthers,settings,imageUrl,about} from './preferances'
+    import {currentUser} from './pocketbase';
     let logoUrl = 'valderuzlogo.png';
     let navText = 'ShiftSwitch';
     import {version} from './preferances'
@@ -14,9 +15,14 @@
   
   <nav class="navbar" on:click={toggleHome}>
     <div class="logo">
-      <div class="version">{$version}</div>
+      <div class="version" class:special-user={$currentUser?.id === "6oagaxaqlte1c1i"}>{$version}
+        {#if $currentUser.id=="6oagaxaqlte1c1i"}
+        ❤️
+        {/if} 
+      </div>
       <img class="logo_img" src={logoUrl} alt="Logo" />
     </div>
+    
     <div class="nav-text">
       {navText}
     </div>
@@ -49,6 +55,9 @@
       padding-right: 2px;
       z-index: 2;
       border: solid black 1px;
+    }
+    .version.special-user {
+      right: -60px; /* whatever the override should be */
     }
   
     .logo_img {
